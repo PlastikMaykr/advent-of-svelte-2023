@@ -41,6 +41,7 @@
 <style>
     div {
         max-width: 600px;
+        margin-inline: auto;
     }
     article {
         position: relative;
