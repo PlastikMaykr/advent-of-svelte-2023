@@ -1,5 +1,8 @@
 <script>
     import Card from "./Card.svelte";
+    import { seconder } from "./timer.js";
+
+    const timer = seconder();
 
     /** @param {Array<any>} arr */
     function shuffle(arr) {
@@ -18,6 +21,11 @@
     const pairs = 24;
 
     function newGame() {
+        timer.stop();
+        // timer.start(clockUpdate);
+        reveals = 0;
+        progress = 0;
+
         won = false;
         first = null;
         second = null;
@@ -48,6 +56,13 @@
     let first = $state(null);
     /** @type {Card|null} */
     let second = $state(null);
+
+    let reveals = $state(0);
+    let progress = $state(0);
+    let clock = $state('');
+    const clockUpdate = () => clock = timer.display;
+
+    // TODO: move newGame declaration here
     
     newGame();
 
@@ -61,14 +76,20 @@
         card.flip = true;
 
         if (!first) {
+            if (!timer.isRunning) timer.start(clockUpdate);
+            
             first = card;
         } else { // first && !second
+            reveals++;
+
             second = card;
 
             if (first.number === second.number) {
                 first.flip = second.flip = false;
                 first.done = second.done = true;
                 first = second = null;
+
+                progress++;
             } else { // first != second
                 setTimeout(() => {
                     first && (first.flip = false);
@@ -82,7 +103,9 @@
             if (won) {
                 // WINNER
                 setTimeout(() => {
-                    alert(`We've got a WINNER!`);
+                    timer.stop();
+                    
+                    alert(`We've got a WINNER!\nreveals: ${reveals}\ntime: ${clock}`);
                 }, revealDuration);
             } 
         }
@@ -91,7 +114,30 @@
     }
 </script>
 
-<button onclick={newGame}>New Game</button>
+<h3>Day Eight</h3>
+<p>Santa’s Mysterious Deck of Doubles</p>
+
+<hr />
+
+<nav>
+    <button onclick={newGame}>New Game</button>
+
+    <!-- svelte-ignore a11y_no_redundant_roles -->
+    <fieldset role="group">
+        <!-- svelte-ignore a11y_label_has_associated_control -->
+        <label>reveals:</label>
+        <output>{reveals}</output>
+    </fieldset>
+
+    <!-- svelte-ignore a11y_no_redundant_roles -->
+    <fieldset role="group">
+        <!-- svelte-ignore a11y_label_has_associated_control -->
+        <label>timer:</label>
+        <output>{clock}</output>
+    </fieldset>
+</nav>
+
+<progress value={progress} max={pairs}></progress>
 
 <article>
     {#each cards as card}
@@ -103,6 +149,29 @@
 </article>
 
 <style>
+    nav {
+        align-items: baseline;
+        margin-bottom: 1rem;
+    }
+
+    fieldset {
+        border: 1px solid;
+        margin: 0;
+        flex: 0;
+        align-items: baseline;
+    }
+    fieldset > * {
+        padding: 0.5em 1em;
+    }
+    label {
+        background-color: var(--pico-secondary-background);
+    }
+    output {
+        /* flex: 0 0 4ch; */
+        min-width: 6ch;
+        text-align: right;
+    }
+
     article {
         display: grid;
         gap: 16px;
