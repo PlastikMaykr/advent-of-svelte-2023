@@ -1,4 +1,7 @@
 <script>
+    // TODO: extract dialog to reusable component
+    // TODO: high score
+
     import Card from "./Card.svelte";
     import { seconder } from "./timer.js";
 
@@ -20,9 +23,35 @@
     const revealDuration = 1000;
     const pairs = 24;
 
+    /** @typedef {object} Card 
+     * @prop {number} index  
+     * @prop {number} number 
+     * @prop {boolean} flip 
+     * @prop {boolean} done 
+     */
+
+    /** @type {Card[]} */
+    let cards = $state([]);
+    let won = $state(false);
+    /** @type {Card|null} */
+    let first = $state(null);
+    /** @type {Card|null} */
+    let second = $state(null);
+
+    let reveals = $state(0);
+    let progress = $state(0);
+    let clock = $state('00');
+    const clockUpdate = () => clock = timer.display;
+
+    /** @type {HTMLDialogElement} */
+    let dialog;
+    const showDialog = () => dialog.showModal();
+    const closeDialog = () => dialog.close();
+    const dialogCloseButtonAttr = { rel: 'prev', onclick: closeDialog };
+ 
     function newGame() {
         timer.stop();
-        // timer.start(clockUpdate);
+        clock = '00';
         reveals = 0;
         progress = 0;
 
@@ -41,28 +70,6 @@
         console.log(cards.map(card => card.number));
         console.groupEnd();
     }
-
-    /** @typedef {object} Card 
-     * @prop {number} index  
-     * @prop {number} number 
-     * @prop {boolean} flip 
-     * @prop {boolean} done 
-     */
-
-    /** @type {Card[]} */
-    let cards = $state([]);
-    let won = $state(false);
-    /** @type {Card|null} */
-    let first = $state(null);
-    /** @type {Card|null} */
-    let second = $state(null);
-
-    let reveals = $state(0);
-    let progress = $state(0);
-    let clock = $state('');
-    const clockUpdate = () => clock = timer.display;
-
-    // TODO: move newGame declaration here
     
     newGame();
 
@@ -104,13 +111,11 @@
                 // WINNER
                 setTimeout(() => {
                     timer.stop();
-                    
-                    alert(`We've got a WINNER!\nreveals: ${reveals}\ntime: ${clock}`);
+
+                    showDialog();
                 }, revealDuration);
             } 
         }
-
-        // console.log({ first, second })
     }
 </script>
 
@@ -139,7 +144,7 @@
 
 <progress value={progress} max={pairs}></progress>
 
-<article>
+<article class="game">
     {#each cards as card}
         <Card
             {card}
@@ -147,6 +152,27 @@
         />
     {/each}
 </article>
+
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions, a11y_click_events_have_key_events -->
+<dialog
+    bind:this={dialog}
+    onclick={closeDialog}
+>
+    <article onclick={(e) => e.stopPropagation()}>
+        <header>
+            <button aria-label="Close" {...dialogCloseButtonAttr}></button>
+            <p>We've got a WINNER!</p>
+        </header>
+        
+        <p>🏆🏁🎉🎆🎇</p>
+        <p>You won!</p>
+        
+        <ul>
+            <li>reveals: {reveals}</li>
+            <li>time: {clock}</li>
+        </ul>
+    </article>
+</dialog>
 
 <style>
     nav {
@@ -167,38 +193,37 @@
         background-color: var(--pico-secondary-background);
     }
     output {
-        /* flex: 0 0 4ch; */
         min-width: 6ch;
         text-align: right;
     }
 
-    article {
+    .game {
         display: grid;
         gap: 16px;
     }
 
     @media (min-width: 576px) {
-        article {
+        .game {
             grid-template-columns: repeat(4, 1fr);
         }
     }
     @media (min-width: 768px) {
-        article {
+        .game {
             grid-template-columns: repeat(6, 1fr);
         }
     }
     @media (min-width: 1024px) {
-        article {
+        .game {
             grid-template-columns: repeat(8, 1fr);
         }
     }
     @media (min-width: 1280px) {
-        article {
+        .game {
             grid-template-columns: repeat(10, 1fr);
         }
     }
     @media (min-width: 1536px) {
-        article {
+        .game {
             grid-template-columns: repeat(12, 1fr);
         }
     }
